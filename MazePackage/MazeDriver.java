@@ -2,6 +2,7 @@ package MazePackage;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class MazeDriver {
@@ -31,7 +32,22 @@ public class MazeDriver {
                     System.out.println("'dfs', 'bfs', or 'a*'");
                     String methodChoice = userInput.nextLine();
                     if(methodChoice.equals("bfs")){
-                        System.out.println("(BFS)Reachable: " + manager.mazeBFS(maze));
+                        ArrayList<Point> path = manager.mazeBFS(maze);
+                        if(path != null){
+                            System.out.println("(BFS)Reachable: true");
+                            for(int i=0; i < path.size(); i++){
+                                if(i == 0){
+                                    System.out.print("[(" + path.get(i).x + ", " + path.get(i).y + "), ");
+                                }else if(i != path.size() - 1){
+                                    System.out.print("(" + path.get(i).x + ", " + path.get(i).y + "), ");
+                                }else{
+                                    System.out.print("(" + path.get(i).x + ", " + path.get(i).y + ")]\n");
+                                }
+                            }
+                        }else{
+                            System.out.println("(BFS)Reachable: false");
+                        }
+
                     }else if(methodChoice.equals("dfs")){
                         System.out.println("Please enter a start point x");
                         int startX = userInput.nextInt();
