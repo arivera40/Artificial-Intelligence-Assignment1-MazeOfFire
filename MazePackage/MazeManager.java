@@ -34,13 +34,13 @@ public class MazeManager {
         }
     }
 
-    //Traverses maze in Depth-First Search and returns true if path is possible to goal, false otherwise
+    //Traverses maze in Depth-First Search and returns true if path to goal is possible, false otherwise
     public boolean mazeDFS(int[][]maze, Point start, Point goal){
         Stack<Point> fringe = new Stack<Point>();
         fringe.push(start);
 
         ArrayList<Point> closedPoints = new ArrayList<Point>();
-        while(!fringe.empty()){
+        while(!fringe.isEmpty()){
             Point curr = fringe.pop();
             if(curr.equals(goal)){
                 return true;
@@ -49,6 +49,28 @@ public class MazeManager {
             for(Point p : possibleSteps){
                 //If possible step is not a path already taken, then add to fringe
                 if(!p.existsIn(closedPoints)) fringe.push(p);
+            }
+            closedPoints.add(curr);
+        }
+        return false;
+    }
+
+    //Traverses maze in Breath-First Search and returns true if path to goal is possible, false otherwise
+    public boolean mazeBFS(int[][]maze){
+        Point goal = new Point(null, maze.length-1, maze.length-1);
+        Queue<Point> fringe = new LinkedList<>();
+        fringe.add(new Point(null, 0, 0));
+
+        ArrayList<Point> closedPoints = new ArrayList<Point>();
+        while(!fringe.isEmpty()){
+            Point curr = fringe.remove();
+            if(curr.equals(goal)){
+                return true;
+            }
+            ArrayList<Point> possibleSteps = generateSteps(maze, curr);
+            for(Point p : possibleSteps){
+                //If possible step is not a path already taken, then add to fringe
+                if(!p.existsIn(closedPoints)) fringe.add(p);
             }
             closedPoints.add(curr);
         }
