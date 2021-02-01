@@ -11,35 +11,53 @@ public class MazeDriver {
     public static void main(String[] args){
         Scanner userInput = new Scanner(System.in);
         try {
-            System.out.println("Please enter 'two points' for random testing");
-            System.out.println("Please enter 'analysis' for DFS analysis");
+            System.out.println("Please enter 'free test' to run DFS, BFS, or A*");
+            System.out.println("Please enter 'dfs analysis' to run DFS analysis");
             String option = userInput.nextLine();
 
-            //Test DFS by choosing start and goal points
-            if(option.equals("two points")) {
-                while (true) {
-                    int dim = 50;   //Change dimension
-                    double p = 0.2; //Change probability
-
-                    int[][] maze = manager.generateMaze(dim, p);
-                    manager.printMaze(maze);
-
-                    System.out.println("Please enter a start point x");
-                    int startX = userInput.nextInt();
-                    System.out.println("Please enter a start point y");
-                    int startY = userInput.nextInt();
-                    Point start = new Point(null, startX, startY);
-                    System.out.println("Please enter a goal point x");
-                    int goalX = userInput.nextInt();
-                    System.out.println("Please enter a goal point y");
-                    int goalY = userInput.nextInt();
-                    Point goal = new Point(null, goalX, goalY);
-                    System.out.println("Reachable: " + manager.mazeDFS(maze, start, goal));
-                    break;
-                }
             //Generate DFS Analysis Report for plotting graph
-            }else{
+            if(option.equals("dfs analysis")){
                 generateDFSAnalysis();
+            //Allows user to choose whatever dimension and probability and which algorithm to run... a little buggy taking input
+            }else{
+                System.out.println("Set dimension 'dim'");
+                int dim = userInput.nextInt();
+
+                System.out.println("Set probability 'p'");
+                double p = userInput.nextDouble();
+                int[][] maze = manager.generateMaze(dim, p);
+                manager.printMaze(maze);
+                while(true){
+                    System.out.println("'dfs', 'bfs', or 'a*'");
+                    String methodChoice = userInput.nextLine();
+                    if(methodChoice.equals("bfs")){
+                        System.out.println("(BFS)Reachable: " + manager.mazeBFS(maze));
+                    }else if(methodChoice.equals("dfs")){
+                        System.out.println("Please enter a start point x");
+                        int startX = userInput.nextInt();
+                        System.out.println("Please enter a start point y");
+                        int startY = userInput.nextInt();
+                        Point start = new Point(null, startX, startY);
+                        System.out.println("Please enter a goal point x");
+                        int goalX = userInput.nextInt();
+                        System.out.println("Please enter a goal point y");
+                        int goalY = userInput.nextInt();
+                        Point goal = new Point(null, goalX, goalY);
+                        System.out.println("(DFS)Reachable: " + manager.mazeDFS(maze, start, goal));
+                    }else{
+                        System.out.println("A* not implemented yet.");
+                    }
+                    System.out.println("Generate new maze? 'yes' or 'no'");
+                    if("yes".equals(userInput.nextLine())){
+                        System.out.println("Set dimension 'dim'");
+                        dim = userInput.nextInt();
+                        System.out.println("Set probability 'p'");
+                        p = userInput.nextDouble();
+
+                        maze = manager.generateMaze(dim, p);
+                        manager.printMaze(maze);
+                    }
+                }
             }
         } catch(Exception e) {
             // System.in has been closed
