@@ -55,17 +55,19 @@ public class MazeManager {
         return false;
     }
 
-    //Traverses maze in Breath-First Search and returns true if path to goal is possible, false otherwise
-    public boolean mazeBFS(int[][]maze){
+    //Traverses maze in Breath-First Search and returns list of Points creating minimal path if possible, null otherwise
+    public ArrayList<Point> mazeBFS(int[][]maze){
         Point goal = new Point(null, maze.length-1, maze.length-1);
         Queue<Point> fringe = new LinkedList<>();
-        fringe.add(new Point(null, 0, 0));
+        Point start = new Point(null, 0, 0);
+        fringe.add(start);
 
         ArrayList<Point> closedPoints = new ArrayList<Point>();
         while(!fringe.isEmpty()){
             Point curr = fringe.remove();
             if(curr.equals(goal)){
-                return true;
+                ArrayList<Point> path = tracePath(curr, start);
+                return path;
             }
             ArrayList<Point> possibleSteps = generateSteps(maze, curr);
             for(Point p : possibleSteps){
@@ -74,7 +76,7 @@ public class MazeManager {
             }
             closedPoints.add(curr);
         }
-        return false;
+        return null;
     }
 
     //Returns List of possible non-restricted steps from the current point passed
@@ -93,6 +95,18 @@ public class MazeManager {
         if((point.y + 1 < maze.length) && (maze[point.x][point.y + 1] != 1) && (maze[point.x][point.y + 1] != 2))
             steps.add(new Point(point, point.x, point.y + 1));
         return steps;
+    }
+
+    //Backtraces by referring to parent of each point starting from 'goal' Point to 'start' Point, returns list of Points creating minimal path
+    private ArrayList<Point> tracePath(Point goal, Point start){
+        Point currPoint = goal;
+        ArrayList<Point> path = new ArrayList<>();
+        while(!currPoint.equals(start)){
+            path.add(0, currPoint);
+            currPoint = currPoint.parent;
+        }
+        path.add(0, currPoint);
+        return path;
     }
 
 }
