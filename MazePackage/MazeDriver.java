@@ -42,12 +42,12 @@ public class MazeDriver {
                                     System.out.print("(" + path.get(i).x + ", " + path.get(i).y + "), ");
                                 }else{
                                     System.out.print("(" + path.get(i).x + ", " + path.get(i).y + ")]\n");
+                                    System.out.println("Steps taken: " + (path.size() - 1));
                                 }
                             }
                         }else{
                             System.out.println("(BFS)Reachable: false");
                         }
-
                     }else if(methodChoice.equals("dfs")){
                         System.out.println("Please enter a start point x");
                         int startX = userInput.nextInt();
@@ -61,7 +61,22 @@ public class MazeDriver {
                         Point goal = new Point(null, goalX, goalY);
                         System.out.println("(DFS)Reachable: " + manager.mazeDFS(maze, start, goal));
                     }else{
-                        System.out.println("A* not implemented yet.");
+                        ArrayList<Point> path = manager.mazeAStar(maze);
+                        if(path != null){
+                            System.out.println("(A*)Reachable: true");
+                            for(int i=0; i < path.size(); i++){
+                                if(i == 0){
+                                    System.out.print("[(" + path.get(i).x + ", " + path.get(i).y + "), ");
+                                }else if(i != path.size() - 1){
+                                    System.out.print("(" + path.get(i).x + ", " + path.get(i).y + "), ");
+                                }else{
+                                    System.out.print("(" + path.get(i).x + ", " + path.get(i).y + ")]\n");
+                                    System.out.println("Steps taken: " + (path.size() - 1));
+                                }
+                            }
+                        }else{
+                            System.out.println("(A*)Reachable: false");
+                        }
                     }
                     System.out.println("Generate new maze? 'yes' or 'no'");
                     if("yes".equals(userInput.nextLine())){
