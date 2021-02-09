@@ -149,7 +149,7 @@ public class MazeManager {
     }
 
     //Duplicates current maze for use in advanceFireOneStep() method
-    private int[][] copyMaze(int[][] maze){
+    public int[][] copyMaze(int[][] maze){
         int length = maze.length;
         int[][] copy = new int[length][length];
         for(int i=0; i < length; i++){
