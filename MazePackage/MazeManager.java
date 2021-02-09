@@ -33,6 +33,21 @@ public class MazeManager {
             }
         }
     }
+    
+    //Sort of visualizes the path with number 7
+    public int[][] newMaze(ArrayList<Point> path, int[][] maze){
+    	
+    	for(int i=0;i<path.size();i++) {
+    		for(int j=0;j<maze.length;j++) {
+    			for(int k =0;k<maze.length;k++) {
+    				if(path.get(i).x == j && path.get(i).y == k){
+    					maze[j][k] = 7; 
+    				}
+    			}
+    		}
+    	}
+    		return maze;
+    }
 
     //Traverses maze using Depth-First Search algorithm and returns true if path to goal is possible, false otherwise
     public boolean mazeDFS(int[][]maze, Point start, Point goal){
