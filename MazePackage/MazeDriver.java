@@ -54,8 +54,9 @@ public class MazeDriver {
                             System.out.println("Steps taken: " + (path.size() - 1));
                         }
                     }
-                    manager.newMaze(path, maze);
-                    manager.printMaze(maze);
+                     int copy[][] =  manager.copyMaze(maze);
+                    manager.newMaze(path, copy);
+                    manager.printMaze(copy);
                 }else{
                     System.out.println("(BFS)Reachable: false");
                 }
@@ -91,8 +92,9 @@ public class MazeDriver {
                             System.out.println("Steps taken: " + (path.size() - 1));
                         }
                     }
-                    manager.newMaze(path, maze);
-                    manager.printMaze(maze);
+                    int copy[][] =  manager.copyMaze(maze);
+                    manager.newMaze(path, copy);
+                    manager.printMaze(copy);
                 }else{
                     System.out.println("(A*)Reachable: false");
                 }
