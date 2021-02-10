@@ -14,100 +14,141 @@ public class MazeDriver {
         boolean quit = false;
         char command;
         boolean time = false;
-        
+
         System.out.println("Welcome to Maze on Fire");
         try {
-        	int maze[][] = null;
-        	while(!quit) {
-        		
-        		if(!time) {
-            System.out.println("Set dimension 'dim' to create maze");
-            int dim = userInput.nextInt();
+            int maze[][] = null;
+            System.out.println("Please enter 'o' for maze of obstacles or 'f' for maze of fire");
+            command = userInput.next().charAt(0);
+            if(command == 'o') {
+                while (!quit) {
 
-            System.out.println("Set probability 'p' to create barricades");
-            double p = userInput.nextDouble();
-             maze = manager.generateMaze(dim, p);
-            manager.printMaze(maze);
-        		}
-        		
-        	System.out.println("Please enter 'd' to run dfs, 'b' for bfs, or 'a' for A*  or 'q' to exit or 'n' for new maze or "
-        			+ "'t' for DFS analysis");
-        	command = userInput.next().charAt(0);
-        	time = true;
-        	
-        	
-        	if(command == 'b') {
-        		final long startTime = System.currentTimeMillis();
-                ArrayList<Point> path = manager.mazeBFS(maze);
-                final long endTime = System.currentTimeMillis();
-                System.out.println("Total execution Time: " + (endTime-startTime)+" milliseconds");
-                if(path != null){
-                    System.out.println("(BFS)Reachable: true");
-       
-                    for(int i=0; i < path.size(); i++){
-                        if(i == 0){
-                            System.out.print("[(" + path.get(i).x + ", " + path.get(i).y + "), ");
-                        }else if(i != path.size() - 1){
-                            System.out.print("(" + path.get(i).x + ", " + path.get(i).y + "), ");
-                        }else{
-                            System.out.print("(" + path.get(i).x + ", " + path.get(i).y + ")]\n");
-                            System.out.println("Steps taken: " + (path.size() - 1));
-                        }
+                    if (!time) {
+                        System.out.println("Set dimension 'dim' to create maze");
+                        int dim = userInput.nextInt();
+
+                        System.out.println("Set probability 'p' to create barricades");
+                        double p = userInput.nextDouble();
+                        maze = manager.generateMaze(dim, p);
+                        manager.printMaze(maze);
                     }
-                     int copy[][] =  manager.copyMaze(maze);
-                    manager.newMaze(path, copy);
-                    manager.printMaze(copy);
-                }else{
-                    System.out.println("(BFS)Reachable: false");
-                }
-        	} else if(command == 'd') {
-        		 System.out.println("Please enter a start point x");
-                 int startX = userInput.nextInt();
-                 System.out.println("Please enter a start point y");
-                 int startY = userInput.nextInt();
-                 Point start = new Point(null, startX, startY);
-                 System.out.println("Please enter a goal point x");
-                 int goalX = userInput.nextInt();
-                 System.out.println("Please enter a goal point y");
-                 int goalY = userInput.nextInt();
-                 Point goal = new Point(null, goalX, goalY);
-                 final long startTime = System.currentTimeMillis();
-                 System.out.println("(DFS)Reachable: " + manager.mazeDFS(maze, start, goal));
-                 final long endTime = System.currentTimeMillis();
-                 System.out.println("Total execution Time: " + (endTime-startTime)+" milliseconds");
-        	} else if(command == 'a') {
-                final long startTime = System.currentTimeMillis();
-        		ArrayList<Point> path = manager.mazeAStar(maze);
-        		final long endTime = System.currentTimeMillis();
-                System.out.println("Total execution Time: " + (endTime-startTime) + " milliseconds");
-                if(path != null){
-                    System.out.println("(A*)Reachable: true");
-                    for(int i=0; i < path.size(); i++){
-                        if(i == 0){
-                            System.out.print("[(" + path.get(i).x + ", " + path.get(i).y + "), ");
-                        }else if(i != path.size() - 1){
-                            System.out.print("(" + path.get(i).x + ", " + path.get(i).y + "), ");
-                        }else{
-                            System.out.print("(" + path.get(i).x + ", " + path.get(i).y + ")]\n");
-                            System.out.println("Steps taken: " + (path.size() - 1));
+
+                    System.out.println("Please enter 'd' to run dfs, 'b' for bfs, or 'a' for A*  or 'q' to exit or 'n' for new maze or "
+                            + "'t' for DFS analysis");
+                    command = userInput.next().charAt(0);
+                    time = true;
+
+
+                    if (command == 'b') {
+                        final long startTime = System.currentTimeMillis();
+                        ArrayList<Point> path = manager.mazeBFS(maze);
+                        final long endTime = System.currentTimeMillis();
+                        System.out.println("Total execution Time: " + (endTime - startTime) + " milliseconds");
+                        if (path != null) {
+                            System.out.println("(BFS)Reachable: true");
+
+                            for (int i = 0; i < path.size(); i++) {
+                                if (i == 0) {
+                                    System.out.print("[(" + path.get(i).x + ", " + path.get(i).y + "), ");
+                                } else if (i != path.size() - 1) {
+                                    System.out.print("(" + path.get(i).x + ", " + path.get(i).y + "), ");
+                                } else {
+                                    System.out.print("(" + path.get(i).x + ", " + path.get(i).y + ")]\n");
+                                    System.out.println("Steps taken: " + (path.size() - 1));
+                                }
+                            }
+                            int copy[][] = manager.copyMaze(maze);
+                            manager.newMaze(path, copy);
+                            manager.printMaze(copy);
+                        } else {
+                            System.out.println("(BFS)Reachable: false");
                         }
+                    } else if (command == 'd') {
+                        System.out.println("Please enter a start point x");
+                        int startX = userInput.nextInt();
+                        System.out.println("Please enter a start point y");
+                        int startY = userInput.nextInt();
+                        Point start = new Point(null, startX, startY);
+                        System.out.println("Please enter a goal point x");
+                        int goalX = userInput.nextInt();
+                        System.out.println("Please enter a goal point y");
+                        int goalY = userInput.nextInt();
+                        Point goal = new Point(null, goalX, goalY);
+                        final long startTime = System.currentTimeMillis();
+                        System.out.println("(DFS)Reachable: " + manager.mazeDFS(maze, start, goal));
+                        final long endTime = System.currentTimeMillis();
+                        System.out.println("Total execution Time: " + (endTime - startTime) + " milliseconds");
+                    } else if (command == 'a') {
+                        final long startTime = System.currentTimeMillis();
+                        ArrayList<Point> path = manager.mazeAStar(maze);
+                        final long endTime = System.currentTimeMillis();
+                        System.out.println("Total execution Time: " + (endTime - startTime) + " milliseconds");
+                        if (path != null) {
+                            System.out.println("(A*)Reachable: true");
+                            for (int i = 0; i < path.size(); i++) {
+                                if (i == 0) {
+                                    System.out.print("[(" + path.get(i).x + ", " + path.get(i).y + "), ");
+                                } else if (i != path.size() - 1) {
+                                    System.out.print("(" + path.get(i).x + ", " + path.get(i).y + "), ");
+                                } else {
+                                    System.out.print("(" + path.get(i).x + ", " + path.get(i).y + ")]\n");
+                                    System.out.println("Steps taken: " + (path.size() - 1));
+                                }
+                            }
+                            int copy[][] = manager.copyMaze(maze);
+                            manager.newMaze(path, copy);
+                            manager.printMaze(copy);
+                        } else {
+                            System.out.println("(A*)Reachable: false");
+                        }
+                    } else if (command == 'n') {
+                        time = false;
+                    } else if (command == 't') {
+                        generateDFSAnalysis();
+                    } else {
+                        quit = true;
                     }
-                    int copy[][] =  manager.copyMaze(maze);
-                    manager.newMaze(path, copy);
-                    manager.printMaze(copy);
-                }else{
-                    System.out.println("(A*)Reachable: false");
+
                 }
-        	}else if (command == 'n'){
-        		time = false;
-        	}else if(command == 't'){
-        		generateDFSAnalysis();
-        	}else {
-        		quit = true;
-        	}
-        	
-        	}
-        
+            }else{
+                while(!quit){
+                    double q = 0;
+                    if (!time) {
+                        System.out.println("Set dimension 'dim' to create maze");
+                        int dim = userInput.nextInt();
+
+                        System.out.println("Set probability 'p' to create barricades");
+                        double p = userInput.nextDouble();
+
+                        System.out.println("Set probability 'q' to create fire");
+                        q = userInput.nextDouble();
+
+                        //Generates a new maze until a path exists to goal within it
+                        maze = manager.generateMazeOfFire(dim, p, q);
+                        while(!manager.mazeDFS(maze, new Point(null, 0, 0), new Point(null, dim-1, dim-1))){
+                            maze = manager.generateMazeOfFire(dim, p, q);
+                        }
+                        manager.printMaze(maze);
+                    }
+                    System.out.println("Please enter '1' to run Strategy 1, '2' to run Strategy 2, '3' to run Strategy 3, 'q' to exit or 'n' for new maze or "
+                            + "'t' for DFS analysis");
+                    command = userInput.next().charAt(0);
+                    time = true;
+                    if(command == '1'){
+                        int [][] result = manager.strategy1(maze, q);
+                        manager.printMaze(result);
+                    }else if(command == '2'){
+                        System.out.println("Strategy 2 is not implemented yet.");
+                    }else if(command == '3'){
+                        System.out.println("Strategy 3 is not implemented yet.");
+                    }else if(command == 'n'){
+                        time = false;
+                    }else{
+                        quit = true;
+                    }
+                }
+            }
+
         } catch(Exception e) {
             // System.in has been closed
             System.out.println("Error: Exiting...");
