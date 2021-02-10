@@ -232,19 +232,19 @@ public class MazeManager {
     //Helper method to determine determine heuristic based on 3 main factors: steps 'backward', steps with 'open space', 'euclidean' distance from goal
     private int getHeuristic(String direction, int[][] maze, int x, int y, int stepsTaken){
         int stepsToGoal = (maze.length - 1) * 2;
-        int stepsInDirection = 0;
+        int openSpace = 0;
         int stepsRemaining = stepsToGoal - (x + y);
         if(direction.equals("down")){
             for(int i = x+1; i < maze.length; i++){
                 if(maze[i][y] != 1 && maze[i][y] != 2)
-                    stepsInDirection++;
+                    openSpace++;
                 else
                     break;
             }
         }else if(direction.equals("right")){
             for(int i = y+1; i < maze.length; i++){
                 if(maze[x][i] != 1 && maze[x][i] != 2)
-                    stepsInDirection++;
+                    openSpace++;
                 else
                     break;
             }
@@ -252,10 +252,14 @@ public class MazeManager {
 
         //If path found with the minimal steps to goal, no need to keep searching, so highest priority possible is used as heuristic
         if(stepsTaken == stepsToGoal) return stepsToGoal;
-        // Otherwise heuristic is calculated by the de-prioritization on paths that required backward movements
-        // + added priority for the open spaces that exist either 'down' or 'right' ahead of point
-        // + added priority for paths that have more steps taken than those that do not -- this can be tweaked to prioritize points with shortest euclidean distance (same thing)
-        return ((stepsToGoal - stepsTaken - stepsRemaining) + stepsInDirection + (stepsTaken - stepsRemaining));
+
+        //Heuristic calculation
+        //deprioritize backward movements so algorithm can search for better paths
+        int deprioritizeBackSteps = (stepsToGoal - stepsTaken - stepsRemaining) * 10;
+        //prioritize paths that are closer to goal state
+        int prioritizeLongerPaths = (stepsTaken - stepsRemaining >= 0) ? (stepsTaken - stepsRemaining) / 2 : 0;
+        //Extra prioritization for paths with open space
+        return deprioritizeBackSteps + openSpace + prioritizeLongerPaths;
     }
 
     //Backtraces by referring to parent of each point starting from 'goal' Point to 'start' Point, returns list of Points creating minimal path
