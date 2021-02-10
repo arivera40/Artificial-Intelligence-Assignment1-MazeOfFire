@@ -20,6 +20,22 @@ public class MazeManager {
         return maze;
     }
 
+    //Generates initial maze of fire based on dimension, probability of obstacles, and probability of fire
+    public int[][] generateMazeOfFire(int dim, double p, double q){
+        int [][] maze = new int[dim][dim];
+        for(int i=0; i < dim; i++){
+            for(int j=0; j < dim; j++){
+                if((i == 0 && j == 0) || (i == dim-1 && j == dim-1)) continue; // Skip if start or goal state
+                if(rand.nextDouble() <= p){
+                    maze[i][j] = 1; // 1 - represents obstacle
+                }else if(rand.nextDouble() <= q){
+                    maze[i][j] = 2; // 2 - represents fire
+                }
+            }
+        }
+        return maze;
+    }
+
     //Prints maze passed to function
     public void printMaze(int[][] maze){
         int dim = maze.length;
@@ -33,20 +49,25 @@ public class MazeManager {
             }
         }
     }
-    
+
     //Sort of visualizes the path with number 7
     public int[][] newMaze(ArrayList<Point> path, int[][] maze){
-    	
-    	for(int i=0;i<path.size();i++) {
-    		for(int j=0;j<maze.length;j++) {
-    			for(int k =0;k<maze.length;k++) {
-    				if(path.get(i).x == j && path.get(i).y == k){
-    					maze[j][k] = 7; 
-    				}
-    			}
-    		}
-    	}
-    		return maze;
+
+        for(int i=0;i<path.size();i++) {
+            for(int j=0;j<maze.length;j++) {
+                for(int k =0;k<maze.length;k++) {
+                    if(path.get(i).x == j && path.get(i).y == k){
+                        if(maze[j][k] == 2){
+                            maze[j][k] = 9;
+                            return maze;
+                        }else{
+                            maze[j][k] = 7;
+                        }
+                    }
+                }
+            }
+        }
+        return maze;
     }
 
     //Traverses maze using Depth-First Search algorithm and returns true if path to goal is possible, false otherwise
@@ -122,6 +143,20 @@ public class MazeManager {
         return null;
     }
 
+    //Implementation of Strategy 1 as described in project description
+    //Generates path to goal using A* algorithm and follows the path 1 step at a time as the fire advances
+    //Returns final state of path after burning in fire or making it to goal state
+    public int[][] strategy1(int[][] maze, double q){
+        ArrayList<Point> path = mazeAStar(maze);
+        Point curr;
+        for(int i=1; i < path.size(); i++){
+            curr = path.get(i);
+            maze = advanceFireOneStep(maze, maze.length, q);
+            if(maze[curr.x][curr.y] == 2) return newMaze(path, maze);
+        }
+        return newMaze(path, maze);
+    }
+
     //Method to advance the fire by one step, based on random probability with increased likelihood if neighbor is on fire
     public int[][] advanceFireOneStep(int[][] maze, int length, double q){
         int[][] mazeCopy = copyMaze(maze);
@@ -179,16 +214,16 @@ public class MazeManager {
     //Returns List of possible non-restricted steps from the current point passed
     private ArrayList<Point> generateStepsWithHeuristic(int[][] maze, Point point, int stepsTaken){
         ArrayList<Point> steps = new ArrayList<>();
-        //Check to see if moving 'up' is possible, because 'up' is a backwards movement within the maze '-1' is subtracted to decrease heuristic priority
+        //Check to see if moving 'up' is possible
         if((point.x - 1 >= 0) && (maze[point.x - 1][point.y] != 1) && (maze[point.x - 1][point.y] != 2))
             steps.add(new Point(point, point.x - 1, point.y, stepsTaken + 1,getHeuristic("up", maze, point.x - 1, point.y, stepsTaken + 1)));
-        //Check to see if moving 'down' is possible, heuristic determined by steps up to generatedStep + steps possible in the same 'down' direction
+        //Check to see if moving 'down' is possible
         if((point.x + 1 < maze.length) && (maze[point.x + 1][point.y] != 1) && (maze[point.x + 1][point.y] != 2))
             steps.add(new Point(point, point.x + 1, point.y, stepsTaken + 1,getHeuristic("down", maze,point.x + 1, point.y, stepsTaken + 1)));
-        //Check to see if moving 'left' is possible, because 'left' is a backwards movement within maze '-1' is subtracted to decrease heuristic priority
+        //Check to see if moving 'left' is possible
         if((point.y - 1 >= 0) && (maze[point.x][point.y - 1] != 1) && (maze[point.x][point.y - 1] != 2))
             steps.add(new Point(point, point.x, point.y - 1, stepsTaken + 1,getHeuristic("left", maze, point.x, point.y - 1, stepsTaken + 1)));
-        //Check to see if moving 'right' is possible, heuristic determined by steps up to generatedStep + steps possible in the same 'down' direction
+        //Check to see if moving 'right' is possible
         if((point.y + 1 < maze.length) && (maze[point.x][point.y + 1] != 1) && (maze[point.x][point.y + 1] != 2))
             steps.add(new Point(point, point.x, point.y + 1, stepsTaken + 1, getHeuristic("right", maze, point.x, point.y + 1, stepsTaken + 1)));
         return steps;
