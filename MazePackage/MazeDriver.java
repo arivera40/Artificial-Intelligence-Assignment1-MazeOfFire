@@ -30,6 +30,22 @@ public class MazeDriver {
                         System.out.println("Set probability 'p' to create barricades");
                         double p = userInput.nextDouble();
                         maze = manager.generateMaze(dim, p);
+//                        maze = new int[][]{{0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1},
+//                                {0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+//                                {0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0},
+//                                {0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0},
+//                                {1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1},
+//                                {0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 0},
+//                                {0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0},
+//                                {1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0},
+//                                {1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+//                                {0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
+//                                {0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0},
+//                                {1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0},
+//                                {0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0},
+//                                {1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0},
+//                                {0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0}
+//                        };
                         manager.printMaze(maze);
                     }
 
@@ -58,7 +74,7 @@ public class MazeDriver {
                                 }
                             }
                             int copy[][] = manager.copyMaze(maze);
-                            manager.newMaze(path, copy);
+                            manager.pathResult(path, copy);
                             manager.printMaze(copy);
                         } else {
                             System.out.println("(BFS)Reachable: false");
@@ -96,7 +112,7 @@ public class MazeDriver {
                                 }
                             }
                             int copy[][] = manager.copyMaze(maze);
-                            manager.newMaze(path, copy);
+                            manager.pathResult(path, copy);
                             manager.printMaze(copy);
                         } else {
                             System.out.println("(A*)Reachable: false");
@@ -111,8 +127,8 @@ public class MazeDriver {
 
                 }
             }else{
+                double q = 0;
                 while(!quit){
-                    double q = 0;
                     if (!time) {
                         System.out.println("Set dimension 'dim' to create maze");
                         int dim = userInput.nextInt();
@@ -120,31 +136,29 @@ public class MazeDriver {
                         System.out.println("Set probability 'p' to create barricades");
                         double p = userInput.nextDouble();
 
-                        System.out.println("Set probability 'q' to create fire");
-                        q = userInput.nextDouble();
-
-                        //Generates a new maze until a path exists to goal within it
-                        maze = manager.generateMazeOfFire(dim, p, q);
-                        while(!manager.mazeDFS(maze, new Point(null, 0, 0), new Point(null, dim-1, dim-1))){
-                            maze = manager.generateMazeOfFire(dim, p, q);
-                        }
+                        maze = manager.generateMazeOfFire(dim, p);
                         manager.printMaze(maze);
                     }
-                    System.out.println("Please enter '1' to run Strategy 1, '2' to run Strategy 2, '3' to run Strategy 3, 'q' to exit or 'n' for new maze or "
-                            + "'t' for DFS analysis");
+                    if(q == 0){
+                        System.out.println("Please enter a probability 'q' to grow the fire");
+                        q = userInput.nextDouble();
+                    }
+                    System.out.println("Please enter '1' to run Strategy 1, '2' to run Strategy 2, '3' to run Strategy 3, " +
+                            "'c' to change fire spread probability, 'q' to exit or 'n' for new maze");
                     command = userInput.next().charAt(0);
                     time = true;
                     if(command == '1'){
                         int [][] result = manager.strategy1(maze, q);
                         manager.printMaze(result);
                     }else if(command == '2'){
-                       int result[][] = manager.strategy2(maze, q);
-                    	manager.printMaze(result);
-                        //System.out.println("Strategy 2 is not implemented yet.");
+                        int result[][] = manager.strategy2(maze, q);
+                        manager.printMaze(result);
                     }else if(command == '3'){
                         System.out.println("Strategy 3 is not implemented yet.");
-                    }else if(command == 'n'){
+                    }else if(command == 'n') {
                         time = false;
+                    }else if(command == 'c'){
+                        q = 0;
                     }else{
                         quit = true;
                     }
