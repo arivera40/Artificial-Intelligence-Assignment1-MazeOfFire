@@ -21,17 +21,31 @@ public class MazeManager {
     }
 
     //Generates initial maze of fire based on dimension, probability of obstacles, and probability of fire
-    public int[][] generateMazeOfFire(int dim, double p, double q){
+    public int[][] generateMazeOfFire(int dim, double p){
+        int firePos = rand.nextInt(((dim-1) * 2) - 2) + 1; //random integer in range of indexes between start and goal state
+        Point firePoint = new Point(null, 0, 0);
         int [][] maze = new int[dim][dim];
         for(int i=0; i < dim; i++){
             for(int j=0; j < dim; j++){
+                firePos--;
                 if((i == 0 && j == 0) || (i == dim-1 && j == dim-1)) continue; // Skip if start or goal state
-                if(rand.nextDouble() <= p){
+                if(firePos == 0){
+                    maze[i][j] = 2; //2 - represents fire
+                    firePoint.x = i;
+                    firePoint.y = j;
+                }else if(rand.nextDouble() <= p){
                     maze[i][j] = 1; // 1 - represents obstacle
-                }else if(rand.nextDouble() <= q){
-                    maze[i][j] = 2; // 2 - represents fire
                 }
             }
+        }
+
+        return discardMalformedMaze(maze, new Point(null, 0, 0), firePoint, dim, p);
+    }
+
+    //Helper method that will continuously discard mazes until one is found with a path from start to goal and where fire is not closed off
+    private int[][] discardMalformedMaze(int[][] maze, Point start, Point firePoint, int dim, double p){
+        while(!mazeDFS(maze, start, new Point(null, dim-1, dim-1)) || !mazeDFS(maze, firePoint, start)){
+            maze = generateMazeOfFire(dim, p);
         }
         return maze;
     }
@@ -50,22 +64,23 @@ public class MazeManager {
         }
     }
 
-    //Sort of visualizes the path with number 7
-    public int[][] newMaze(ArrayList<Point> path, int[][] maze){
-
-        for(int i=0;i<path.size();i++) {
-            for(int j=0;j<maze.length;j++) {
-                for(int k =0;k<maze.length;k++) {
-                    if(path.get(i).x == j && path.get(i).y == k){
-                        if(maze[j][k] == 2){
-                            maze[j][k] = 9;
-                            return maze;
-                        }else{
-                            maze[j][k] = 7;
-                        }
-                    }
-                }
+    //Visual of path taken, path ends in 9 if agent burnt before exit or ends in 7 at goal state (used for fire maze specifically)
+    public int[][] pathResult(ArrayList<Point> path, int[][] maze, Point end){
+        for(Point p : path){
+            if(maze[p.x][p.y] == 2){
+                maze[p.x][p.y] = 9;
+            }else{
+                maze[p.x][p.y] = 7;
             }
+            if(p == end) return maze;
+        }
+        return maze;
+    }
+
+    //Visual of path taken marked with 7
+    public int[][] pathResult(ArrayList<Point> path, int[][] maze){
+        for(Point p : path){
+            maze[p.x][p.y] = 7;
         }
         return maze;
     }
@@ -96,30 +111,6 @@ public class MazeManager {
         Point goal = new Point(null, maze.length-1, maze.length-1);
         Queue<Point> fringe = new LinkedList<>();
         Point start = new Point(null, 0, 0);
-        fringe.add(start);
-
-        ArrayList<Point> closedPoints = new ArrayList<Point>();
-        while(!fringe.isEmpty()){
-            Point curr = fringe.remove();
-            if(curr.equals(goal)){
-                ArrayList<Point> path = tracePath(curr, start);
-                return path;
-            }
-            ArrayList<Point> possibleSteps = generateSteps(maze, curr);
-            for(Point p : possibleSteps){
-                //If possible step is not a path already taken, then add to fringe
-                if(!p.existsIn(closedPoints)) fringe.add(p);
-            }
-            closedPoints.add(curr);
-        }
-        return null;
-    }
-    
-    //Modified BFS method to traverse between two given points. 
-    public ArrayList<Point> mazeBFSFire(int[][] maze,Point start, Point goal){
-       // Point goal = new Point(null, maze.length-1, maze.length-1);
-        Queue<Point> fringe = new LinkedList<>();
-        //Point start = new Point(null, 0, 0);
         fringe.add(start);
 
         ArrayList<Point> closedPoints = new ArrayList<Point>();
@@ -171,47 +162,73 @@ public class MazeManager {
     //Generates path to goal using A* algorithm and follows the path 1 step at a time as the fire advances
     //Returns final state of path after burning in fire or making it to goal state
     public int[][] strategy1(int[][] maze, double q){
+        int[][] mazeCopy = copyMaze(maze);  //Copy used so same maze can be reused in driver
         ArrayList<Point> path = mazeAStar(maze);
-        Point curr;
+        Point curr = new Point(null, 0, 0);
         for(int i=1; i < path.size(); i++){
             curr = path.get(i);
-            maze = advanceFireOneStep(maze, maze.length, q);
-            if(maze[curr.x][curr.y] == 2) return newMaze(path, maze);
+            mazeCopy = advanceFireOneStep(mazeCopy, mazeCopy.length, q);
+            if(mazeCopy[curr.x][curr.y] == 2) return pathResult(path, mazeCopy, curr);
         }
-        return newMaze(path, maze);
+        return pathResult(path, mazeCopy, curr);
     }
-    
+
     //method uses modified BFS method to calculate path at every point in the maze
-    	public int[][] strategy2(int[][] maze,double q){
-    		
-    		Point curr = new Point(null,0,0);
-    		Point goal = new Point(null,maze.length-1,maze.length-1);
-    		
-    		ArrayList<Point> path = mazeBFS(maze);
-    		ArrayList<Point> newPath = new ArrayList<>();
-    		newPath.add(curr);
-    		
-    		if(q==0) {
-    			return (newMaze(path,maze));
-    		}
-    		
-    		while(!curr.equals(goal)) {
-    			curr = path.get(1);
-    			maze = advanceFireOneStep(maze,maze.length,q);
-    			path = mazeBFSFire(maze,curr,goal);
-    			newPath.add(curr);
-    			if(maze[curr.x][curr.y] ==2) {
-    				System.out.println("You died in the fire!");
-    				return newMaze(newPath,maze);
-    			} 	
-    			if(path==null) {
-    				System.out.println("No path found from current point to goal point");
-    				return newMaze(newPath,maze);
-    			}
-    		}
-    		System.out.println("Congrats you made it out the fire");
-    		return newMaze(newPath,maze);
-    	}
+    public int[][] strategy2(int[][] maze,double q){
+        int[][] mazeCopy = copyMaze(maze);
+
+        Point curr = new Point(null,0,0);
+        Point goal = new Point(null,mazeCopy.length-1,mazeCopy.length-1);
+
+        ArrayList<Point> path = mazeBFS(mazeCopy);
+        ArrayList<Point> newPath = new ArrayList<>();
+        newPath.add(curr);
+
+        if(q==0) {
+            return (pathResult(path,mazeCopy));
+        }
+
+        while(!curr.equals(goal)) {
+            curr = path.get(1);
+            mazeCopy = advanceFireOneStep(mazeCopy,mazeCopy.length,q);
+            path = mazeBFSFire(mazeCopy,curr,goal);
+            newPath.add(curr);
+            if(mazeCopy[curr.x][curr.y] ==2) {
+                System.out.println("You died in the fire!");
+                return pathResult(newPath,mazeCopy, curr);
+            }
+            if(path==null) {
+                System.out.println("No path found from current point to goal point");
+                return pathResult(newPath,mazeCopy, curr);
+            }
+        }
+        System.out.println("Congrats you made it out the fire");
+        return pathResult(newPath,mazeCopy, curr);
+    }
+
+    //Modified BFS method to traverse between two given points.
+    public ArrayList<Point> mazeBFSFire(int[][] maze,Point start, Point goal){
+        // Point goal = new Point(null, maze.length-1, maze.length-1);
+        Queue<Point> fringe = new LinkedList<>();
+        //Point start = new Point(null, 0, 0);
+        fringe.add(start);
+
+        ArrayList<Point> closedPoints = new ArrayList<Point>();
+        while(!fringe.isEmpty()){
+            Point curr = fringe.remove();
+            if(curr.equals(goal)){
+                ArrayList<Point> path = tracePath(curr, start);
+                return path;
+            }
+            ArrayList<Point> possibleSteps = generateSteps(maze, curr);
+            for(Point p : possibleSteps){
+                //If possible step is not a path already taken, then add to fringe
+                if(!p.existsIn(closedPoints)) fringe.add(p);
+            }
+            closedPoints.add(curr);
+        }
+        return null;
+    }
 
     //Method to advance the fire by one step, based on random probability with increased likelihood if neighbor is on fire
     public int[][] advanceFireOneStep(int[][] maze, int length, double q){
