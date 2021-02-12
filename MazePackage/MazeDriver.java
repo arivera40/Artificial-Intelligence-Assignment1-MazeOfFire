@@ -138,7 +138,11 @@ public class MazeDriver {
                         int result[][] = manager.strategy2(maze, q);
                         manager.printMaze(result);
                     }else if(command == '3'){
-                        System.out.println("Strategy 3 is not implemented yet.");
+                        int result[][] = manager.strategy3(maze, q);
+                       if(result != null) {
+                        manager.printMaze(result);
+                    	} else {System.out.println("No path found");}
+                        //System.out.println("Strategy 3 is not implemented yet.");
                     }else if(command == 'n') {
                         time = false;
                     }else if(command == 'c'){
