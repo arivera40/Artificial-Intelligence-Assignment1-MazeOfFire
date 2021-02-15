@@ -158,6 +158,29 @@ public class MazeManager {
         return null;
     }
 
+    //Modified A* algorithm that takes a start and goal point
+    public ArrayList<Point> mazeAStar(int[][] maze, Point start, Point goal){
+        Comparator<Point> comparator = new PointComparator();
+        PriorityQueue<Point> fringe = new PriorityQueue<Point>(comparator);
+        fringe.add(start);
+
+        ArrayList<Point> closedPoints = new ArrayList<Point>();
+        while(!fringe.isEmpty()){
+            Point curr = fringe.remove();
+            if(curr.equals(goal)){
+                ArrayList<Point> path = tracePath(curr, start);
+                return path;
+            }
+            ArrayList<Point> possibleSteps = generateStepsWithHeuristic(maze, curr, curr.stepsTaken);
+            for(Point p : possibleSteps){
+                //If possible step is not a path already taken, then add to fringe
+                if(!p.existsIn(closedPoints)) fringe.add(p);
+            }
+            closedPoints.add(curr);
+        }
+        return null;
+    }
+
     //Implementation of Strategy 1 as described in project description
     //Generates path to goal using A* algorithm and follows the path 1 step at a time as the fire advances
     //Returns final state of path after burning in fire or making it to goal state
@@ -168,8 +191,12 @@ public class MazeManager {
         for(int i=1; i < path.size(); i++){
             curr = path.get(i);
             mazeCopy = advanceFireOneStep(mazeCopy, mazeCopy.length, q);
-            if(mazeCopy[curr.x][curr.y] == 2) return pathResult(path, mazeCopy, curr);
+            if(mazeCopy[curr.x][curr.y] == 2) {
+                System.out.println("You died in the fire!");
+                return pathResult(path, mazeCopy, curr);
+            }
         }
+        System.out.println("Congrats you made it out the fire");
         return pathResult(path, mazeCopy, curr);
     }
 
@@ -180,7 +207,7 @@ public class MazeManager {
         Point curr = new Point(null,0,0);
         Point goal = new Point(null,mazeCopy.length-1,mazeCopy.length-1);
 
-        ArrayList<Point> path = mazeBFS(mazeCopy);
+        ArrayList<Point> path = mazeAStar(mazeCopy);
         ArrayList<Point> newPath = new ArrayList<>();
         newPath.add(curr);
 
@@ -191,7 +218,7 @@ public class MazeManager {
         while(!curr.equals(goal)) {
             curr = path.get(1);
             mazeCopy = advanceFireOneStep(mazeCopy,mazeCopy.length,q);
-            path = mazeBFSFire(mazeCopy,curr,goal);
+            path = mazeAStar(mazeCopy,curr,goal);
             newPath.add(curr);
             if(mazeCopy[curr.x][curr.y] ==2) {
                 System.out.println("You died in the fire!");
@@ -206,28 +233,95 @@ public class MazeManager {
         return pathResult(newPath,mazeCopy, curr);
     }
 
-    //Modified BFS method to traverse between two given points.
-    public ArrayList<Point> mazeBFSFire(int[][] maze,Point start, Point goal){
-        // Point goal = new Point(null, maze.length-1, maze.length-1);
-        Queue<Point> fringe = new LinkedList<>();
-        //Point start = new Point(null, 0, 0);
-        fringe.add(start);
-
-        ArrayList<Point> closedPoints = new ArrayList<Point>();
-        while(!fringe.isEmpty()){
-            Point curr = fringe.remove();
-            if(curr.equals(goal)){
-                ArrayList<Point> path = tracePath(curr, start);
-                return path;
+    //Strategy 3 implementation that generates an initial path to goal, scans the path ahead to determine if any point is or will be on fire soon
+    //if so a new path is choosen if possible, otherwise will take the risk and proceed with same path or run into the fire if no other option
+    public int[][] strategy3(int[][] maze, double q){
+        int[][] mazeCopy = copyMaze(maze);
+        ArrayList<Point> path = mazeAStar(maze);
+        Point curr = path.get(0);
+        for(int i=1; i < path.size(); i++){
+            curr = path.get(i);
+            mazeCopy = advanceFireOneStep(mazeCopy, mazeCopy.length, q);
+            if(mazeCopy[curr.x][curr.y] == 2){
+                System.out.println("You died in the fire!");
+                return pathResult(path, mazeCopy, curr);
             }
-            ArrayList<Point> possibleSteps = generateSteps(maze, curr);
-            for(Point p : possibleSteps){
-                //If possible step is not a path already taken, then add to fringe
-                if(!p.existsIn(closedPoints)) fringe.add(p);
+            ArrayList<Point> firePoints = findFirePoints(mazeCopy);
+            ArrayList<Point> tempPath = scanPath(mazeCopy, i, path, firePoints, q);
+            //new optimal path found avoiding risks
+            if(tempPath != null){
+                path = connectPath(path, tempPath, i);
+                for(int j=0; j < path.size(); j++){
+                    if(j == i) System.out.print("i: ");
+                    System.out.println(path.get(j));
+                }
             }
-            closedPoints.add(curr);
         }
-        return null;
+        System.out.println("Congrats you made it out the fire");
+        return pathResult(path, mazeCopy, curr);
+    }
+
+    //Helper method that connects previous path taken up until current index and connects it to new path generated to avoid fire
+    private ArrayList<Point> connectPath(ArrayList<Point> oldPath, ArrayList<Point> newPath, int index){
+        ArrayList<Point> connectedPath = new ArrayList<>();
+        for(int i=0; i < index; i++){
+            connectedPath.add(oldPath.get(i));
+        }
+        for(int i=0; i < newPath.size(); i++){
+            connectedPath.add(newPath.get(i));
+        }
+        return connectedPath;
+    }
+
+    //Helper method that scans current path by counting the steps from fire to each point in path (ahead of currIndex) and determining the probability of that point
+    //being at risk of fire. If point is above 0.12 threshold then another it will generate a new path that avoids risky point if possible
+    private ArrayList<Point> scanPath(int[][] maze, int currIndex, ArrayList<Point> path, ArrayList<Point> firePoints, double q){
+        int[][] tempMaze = copyMaze(maze);
+        ArrayList<Point> newPath = null;
+        for(int i=0; i < firePoints.size(); i++){
+            for(int j=currIndex + 1; j < path.size(); j++){
+                Point fire = firePoints.get(i);
+                Point curr = path.get(j);
+                int fireToPoint = ((curr.x <= fire.x) ? fire.x - curr.x : curr.x - fire.x) +
+                        ((curr.y <= fire.y) ? fire.y - curr.y : curr.y - fire.y);
+                double probabilityOfFire = Math.pow(q, fireToPoint);
+
+                //Point in path is currently on fire
+                if(probabilityOfFire == 1){
+                    ArrayList<Point> tempPath = mazeAStar(tempMaze, path.get(currIndex), path.get(path.size() - 1));
+                    if(tempPath != null)
+                        newPath = tempPath;
+                    else
+                        return null;    //return nothing as no other path avoids fire, save computation
+                //Point in path is at risk of being on fire soon
+                }else if(probabilityOfFire >= 0.12) {
+                    int stepsToPoint = j - currIndex;
+                    //try to find a new path avoiding risky point
+                    if (stepsToPoint > fireToPoint) {
+                        tempMaze[curr.x][curr.y] = 2;
+                        ArrayList<Point> tempPath = mazeAStar(tempMaze, path.get(currIndex), path.get(path.size() - 1));
+                        if (tempPath != null)
+                            newPath = tempPath; //If a path exists, update newPath with tempPath
+                        else
+                            tempMaze[curr.x][curr.y] = 0; //Otherwise no other path exists, so remain with same path and take the risk
+                    }
+                }
+            }
+        }
+        return newPath;
+    }
+
+    //Helper method that generates a list of points in maze that are on fire
+    private ArrayList<Point> findFirePoints(int[][] maze){
+        ArrayList<Point> firePoints = new ArrayList<>();
+        for(int i=0;i<maze.length;i++) {
+            for(int j=0;j<maze.length;j++) {
+                if(maze[i][j] == 2) {
+                    firePoints.add(new Point(null, i, j));
+                }
+            }
+        }
+        return firePoints;
     }
 
     //Method to advance the fire by one step, based on random probability with increased likelihood if neighbor is on fire
