@@ -130,6 +130,34 @@ public class MazeManager {
         return null;
     }
 
+    //Traverses maze using Breath-First Search algorithm and returns number of points explored
+    public int mazeBFSPointsExplored(int[][] maze){
+        Point goal = new Point(null, maze.length-1, maze.length-1);
+        Queue<Point> fringe = new LinkedList<>();
+        Point start = new Point(null, 0, 0);
+
+        int pointsExplored = 0;
+        fringe.add(start);
+
+        ArrayList<Point> closedPoints = new ArrayList<Point>();
+        while(!fringe.isEmpty()){
+            Point curr = fringe.remove();
+            if(curr.equals(goal)){
+                return pointsExplored;
+            }
+            ArrayList<Point> possibleSteps = generateSteps(maze, curr);
+            for(Point p : possibleSteps){
+                //If possible step is not a path already taken, then add to fringe
+                if(!p.existsIn(closedPoints)){
+                    pointsExplored++;
+                    fringe.add(p);
+                }
+            }
+            closedPoints.add(curr);
+        }
+        return pointsExplored;
+    }
+
     //Traverses maze using A* algorithm and returns list of Points creating minimal path if possible, null otherwise
     //Queue prioritizes Point's based off heuristic which is determined by de-prioritization of paths with steps 'backward' + greatest 'look-ahead path' + euclidean distance
     //'look-ahead path' - the free spaces ahead that avoids 'fire' or 'obstacle' either in the 'right' or 'down' direction
@@ -179,6 +207,36 @@ public class MazeManager {
             closedPoints.add(curr);
         }
         return null;
+    }
+
+    //Traverses maze using A* algorithm and returns number of points explored
+    public int mazeAStarPointsExplored(int[][] maze){
+        Point goal = new Point(null, maze.length-1, maze.length-1);
+
+        Comparator<Point> comparator = new PointComparator();
+        PriorityQueue<Point> fringe = new PriorityQueue<Point>(comparator);
+        Point start = new Point(null, 0, 0);
+
+        int pointsExplored = 0;
+        fringe.add(start);
+
+        ArrayList<Point> closedPoints = new ArrayList<Point>();
+        while(!fringe.isEmpty()){
+            Point curr = fringe.remove();
+            if(curr.equals(goal)){
+                return pointsExplored;
+            }
+            ArrayList<Point> possibleSteps = generateStepsWithHeuristic(maze, curr, curr.stepsTaken);
+            for(Point p : possibleSteps){
+                //If possible step is not a path already taken, then add to fringe
+                if(!p.existsIn(closedPoints)) {
+                    pointsExplored++;
+                    fringe.add(p);
+                }
+            }
+            closedPoints.add(curr);
+        }
+        return pointsExplored;
     }
 
     //Implementation of Strategy 1 as described in project description
@@ -234,7 +292,7 @@ public class MazeManager {
     }
 
     //Strategy 3 implementation that generates an initial path to goal, scans the path ahead to determine if any point is or will be on fire soon
-    //if so a new path is choosen if possible, otherwise will take the risk and proceed with same path or run into the fire if no other option
+    //if so a new path is chosen if possible, otherwise will take the risk and proceed with same path or run into the fire if no other option
     public int[][] strategy3(int[][] maze, double q){
         int[][] mazeCopy = copyMaze(maze);
         ArrayList<Point> path = mazeAStar(maze);
@@ -251,10 +309,6 @@ public class MazeManager {
             //new optimal path found avoiding risks
             if(tempPath != null){
                 path = connectPath(path, tempPath, i);
-                for(int j=0; j < path.size(); j++){
-                    if(j == i) System.out.print("i: ");
-                    System.out.println(path.get(j));
-                }
             }
         }
         System.out.println("Congrats you made it out the fire");
