@@ -1,5 +1,8 @@
 package MazePackage;
 
+import org.jfree.data.category.DefaultCategoryDataset;
+import org.jfree.ui.RefineryUtilities;
+
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -18,7 +21,7 @@ public class MazeDriver {
         System.out.println("Welcome to Maze on Fire");
         try {
             int maze[][] = null;
-            System.out.println("Please enter 'o' for maze of obstacles or 'f' for maze of fire");
+            System.out.println("Please enter 'o' for maze of obstacles, 'f' for maze of fire, 'd' for DFS analysis graph, 'b' for BFS vs A* analysis graph");
             command = userInput.next().charAt(0);
             if(command == 'o') {
                 while (!quit) {
@@ -33,8 +36,7 @@ public class MazeDriver {
                         manager.printMaze(maze);
                     }
 
-                    System.out.println("Please enter 'd' to run dfs, 'b' for bfs, or 'a' for A*  or 'q' to exit or 'n' for new maze or "
-                            + "'t' for DFS analysis");
+                    System.out.println("Please enter 'd' to run dfs, 'b' for bfs, or 'a' for A*  or 'q' to exit or 'n' for new maze");
                     command = userInput.next().charAt(0);
                     time = true;
 
@@ -103,14 +105,12 @@ public class MazeDriver {
                         }
                     } else if (command == 'n') {
                         time = false;
-                    } else if (command == 't') {
-                        generateDFSAnalysis();
                     } else {
                         quit = true;
                     }
 
                 }
-            }else{
+            }else if(command == 'f'){
                 double q = 0;
                 while(!quit){
                     if (!time) {
@@ -138,11 +138,9 @@ public class MazeDriver {
                         int result[][] = manager.strategy2(maze, q);
                         manager.printMaze(result);
                     }else if(command == '3'){
-                        int result[][] = manager.strategy3(maze, q);
-                       if(result != null) {
+                        System.out.println("Strategy 3 is being tested...");
+                        int [][] result = manager.strategy3(maze, q);
                         manager.printMaze(result);
-                    	} else {System.out.println("No path found");}
-                        //System.out.println("Strategy 3 is not implemented yet.");
                     }else if(command == 'n') {
                         time = false;
                     }else if(command == 'c'){
@@ -151,6 +149,10 @@ public class MazeDriver {
                         quit = true;
                     }
                 }
+            }else if(command == 'd'){
+                generateDFSAnalysis();
+            }else{
+                generateAStarVsBFSAnalysis();
             }
 
         } catch(Exception e) {
@@ -165,11 +167,11 @@ public class MazeDriver {
     //There are a total of 10 tests for which the average of the 10 results are taken
     //mazeDFS function is performed a total of 100 times for each 'obstacle density p' in order to get an accurate plot
     public static void generateDFSAnalysis(){
-        int dim = 175;
-        Point start = new Point(null, 0, 0);
-        Point goal = new Point(null, 174, 174);
+        int dim = 50;
+        Point start = new Point(null, 49, 49);
+        Point goal = new Point(null, 0, 0);
 
-        double[] average = new double[10];  //keeps track of results for each test
+        double[] average = new double[9];  //keeps track of results for each test
         //Loop to perform 10 tests
         for(int test = 0; test < 10; test++) {
             System.out.println("Test " + (test+1));
@@ -189,17 +191,70 @@ public class MazeDriver {
             }
             System.out.println();
         }
+
+        DefaultCategoryDataset dfsDataset = new DefaultCategoryDataset();
+
         //Outputs average results for each test
-        for(int i=0; i < average.length; i++){
-            System.out.println("Average results for 0." + i + " is: " + formatDouble(average[i]/10));
+        for(int i=0; i < average.length; i++) {
+            System.out.println("Average results for 0." + (i+1) + " is: " + formatDouble(average[i]/10));
+            dfsDataset.addValue(formatDouble(average[i] / 10), "success", "0." + (i + 1));
         }
+        GraphGenerator generator = new GraphGenerator("DFS Plot Analysis",
+                "Obstacle Density vs Success Rate",
+                "probability that S can be reached from G",
+                "obstacle density p",
+                dfsDataset);
+        generator.pack();
+        RefineryUtilities.centerFrameOnScreen(generator);
+        generator.setVisible(true);
     }
 
-    private static String formatDouble(double num){
+    //Still testing...
+    public static void generateAStarVsBFSAnalysis(){
+        int dim = 10;
+        double[] average = new double[10];
+        for(int test = 0; test < 10; test++){
+            System.out.println("Test " + (test+1));
+            int t = 0;
+            for(double p = 0.1; p < 0.91; p += 0.1){
+                int results = 0;
+                for(int i=0; i < 10; i++){
+                    int[][] maze = manager.generateMaze(dim, p);
+                    int BFSPointsExplored = manager.mazeBFSPointsExplored(maze);
+                    int AStarPointsExplored = manager.mazeAStarPointsExplored(maze);
+                    results += (BFSPointsExplored - AStarPointsExplored);
+                }
+                System.out.println("Average 'number of nodes explored by BFS - number of nodes explored by A*': " + (results/10)
+                        + ", when obstacle density p is: " + formatDouble(p));
+                average[t] += results;
+                t++;
+            }
+            System.out.println();
+        }
+
+        DefaultCategoryDataset dfsDataset = new DefaultCategoryDataset();
+
+        //Outputs average results for each test
+        for(int i=0; i < average.length; i++) {
+            System.out.println("Average difference between BFS nodes explored - A* nodes explored for 0." + (i+1) + " is: "
+                    + formatDouble(average[i]/10));
+            dfsDataset.addValue(formatDouble(average[i] / 10), "difference", "0." + (i + 1));
+        }
+        GraphGenerator generator = new GraphGenerator("Average Points Explored Difference",
+                "BFS vs A*",
+                "number of nodes explored by BFS - number of nodes explored by A*",
+                "obstacle density p",
+                dfsDataset);
+        generator.pack();
+        RefineryUtilities.centerFrameOnScreen(generator);
+        generator.setVisible(true);
+    }
+
+    private static Double formatDouble(double num){
         String pattern = "0.00";
         DecimalFormat decimalFormat = new DecimalFormat(pattern);
         String numberStr = decimalFormat.format(num);
-        return numberStr;
+        return Double.parseDouble(numberStr);
     }
 
 }
