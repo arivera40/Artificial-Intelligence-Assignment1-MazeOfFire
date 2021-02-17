@@ -21,7 +21,7 @@ public class MazeDriver {
         System.out.println("Welcome to Maze on Fire");
         try {
             int maze[][] = null;
-            System.out.println("Please enter 'o' for maze of obstacles, 'f' for maze of fire, 'd' for DFS analysis graph, 'b' for BFS vs A* analysis graph");
+            System.out.println("Please enter 'o' for maze of obstacles, 'f' for maze of fire, 'd' for DFS analysis graph, 'b' for BFS vs A* analysis graph, 's' for Strategy Analysis");
             command = userInput.next().charAt(0);
             if(command == 'o') {
                 while (!quit) {
@@ -151,7 +151,10 @@ public class MazeDriver {
                 }
             }else if(command == 'd'){
                 generateDFSAnalysis();
-            }else{
+            }else if(command == 's'){
+                 generateStrategiesAnalysis();
+                }
+            else{
                 generateAStarVsBFSAnalysis();
             }
 
@@ -248,6 +251,52 @@ public class MazeDriver {
         generator.pack();
         RefineryUtilities.centerFrameOnScreen(generator);
         generator.setVisible(true);
+    }
+    
+    public static void generateStrategiesAnalysis(){
+        int dim = 50;
+        ArrayList<int[][]> mazes = new ArrayList<>();
+        for(int i=0;i<10;i++){
+            mazes.add(manager.generateMazeOfFire(dim,0.3));
+        }
+        double[] results1 = new double[9];
+        double[] results2 = new double[9];
+        double[] results3 = new double[9];
+        int qIndex =0;
+
+        for(double q=0.1;q<0.91;q+=0.1){
+            for(int i=0;i<10;i++){
+                int[][] maze = mazes.get(i);
+                if(manager.strategy1(maze,q)[49][49] == 7) results1[qIndex] +=0.1;
+                if(manager.strategy2(maze,q)[49][49] == 7) results2[qIndex] +=0.1;
+                if(manager.strategy3(maze,q)[49][49] == 7) results3[qIndex] +=0.1;
+            }
+            System.out.println("Average Successes for strategy 1: " + formatDouble(results1[qIndex])
+                    + ", when Flammability q is: " + formatDouble(q));
+            System.out.println("Average Successes for strategy 2: " + formatDouble(results2[qIndex])
+                    + ", when Flammability q is: " + formatDouble(q));
+            System.out.println("Average Successes for strategy 3: " + formatDouble(results2[qIndex])
+                    + ", when Flammability q is: " + formatDouble(q));
+            System.out.println();
+            qIndex++;
+        }
+
+        DefaultCategoryDataset stratDataset = new DefaultCategoryDataset();
+
+        for(int i=0; i < results1.length; i++) {
+            stratDataset.addValue(formatDouble(results1[i] / 10), "Strategy 1", "0." + (i + 1));
+            stratDataset.addValue(formatDouble(results2[i] / 10), "Strategy 2", "0." + (i + 1));
+            stratDataset.addValue(formatDouble(results3[i] / 10), "Strategy 3", "0." + (i + 1));
+        }
+        GraphGenerator generator = new GraphGenerator("Strategy Success Analysis",
+                "Average Success Rates vs Flammability q",
+                "Success Rates",
+                "Flammability q",
+                stratDataset);
+        generator.pack();
+        RefineryUtilities.centerFrameOnScreen(generator);
+        generator.setVisible(true);
+
     }
 
     private static Double formatDouble(double num){
