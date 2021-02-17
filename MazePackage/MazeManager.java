@@ -338,31 +338,62 @@ public class MazeManager {
                 Point curr = path.get(j);
                 int fireToPoint = ((curr.x <= fire.x) ? fire.x - curr.x : curr.x - fire.x) +
                         ((curr.y <= fire.y) ? fire.y - curr.y : curr.y - fire.y);
-                double probabilityOfFire = Math.pow(q, fireToPoint);
 
-                //Point in path is currently on fire
-                if(probabilityOfFire == 1){
+                if(fireToPoint == 0){   //Point in path is currently on fire
                     ArrayList<Point> tempPath = mazeAStar(tempMaze, path.get(currIndex), path.get(path.size() - 1));
                     if(tempPath != null)
                         newPath = tempPath;
                     else
                         return null;    //return nothing as no other path avoids fire, save computation
                 //Point in path is at risk of being on fire soon
-                }else if(probabilityOfFire >= 0.12) {
+                }else if(fireToPoint <= 3) {
                     int stepsToPoint = j - currIndex;
-                    //try to find a new path avoiding risky point
-                    if (stepsToPoint > fireToPoint) {
-                        tempMaze[curr.x][curr.y] = 2;
-                        ArrayList<Point> tempPath = mazeAStar(tempMaze, path.get(currIndex), path.get(path.size() - 1));
-                        if (tempPath != null)
-                            newPath = tempPath; //If a path exists, update newPath with tempPath
-                        else
-                            tempMaze[curr.x][curr.y] = 0; //Otherwise no other path exists, so remain with same path and take the risk
+                    if (stepsToPoint >= fireToPoint) { //Consider a new path if steps to pass point is more than the estimate of the fire to cover point
+                        ArrayList<Point> firePath = modifiedMazeBFS(tempMaze, fire, curr, stepsToPoint);    //Retrieves accurate steps from fire to point in path
+                        if(firePath != null){   //If accurate steps from fire to point is less than the steps to pass risky point
+                            for(Point p : firePath){    //Simulate the fire path in order to see if its avoidable
+                                tempMaze[p.x][p.y] = 2;
+                            }
+                            ArrayList<Point> tempPath = mazeAStar(tempMaze, path.get(currIndex), path.get(path.size() - 1)); //Try to find a new path that avoids the simulated fire path
+                            if(tempPath != null) {  //If one exists remember newPath
+                                newPath = tempPath;
+                            } else {    //Otherwise reset tempMaze and the risk will have to be taken
+                                for (Point p : firePath) {
+                                    tempMaze[p.x][p.y] = 0;
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
         return newPath;
+    }
+
+    private ArrayList<Point> modifiedMazeBFS(int[][] maze, Point start, Point goal, int steps){
+        Queue<Point> fringe = new LinkedList<>();
+        fringe.add(start);
+
+        ArrayList<Point> closedPoints = new ArrayList<Point>();
+        final long timer = System.currentTimeMillis();
+        while(!fringe.isEmpty()){
+            if(timer >= 5000) break;
+            Point curr = fringe.remove();
+            if(curr.equals(goal)){
+                ArrayList<Point> path = tracePath(curr, start);
+                if(path.size() - 1 > steps){
+                    return null;
+                }
+                return path;
+            }
+            ArrayList<Point> possibleSteps = generateSteps(maze, curr);
+            for(Point p : possibleSteps){
+                //If possible step is not a path already taken, then add to fringe
+                if(!p.existsIn(closedPoints)) fringe.add(p);
+            }
+            closedPoints.add(curr);
+        }
+        return null;
     }
 
     //Helper method that generates a list of points in maze that are on fire
