@@ -12,13 +12,14 @@ public class MazeDriver {
 
     static MazeManager manager = new MazeManager();
 
+//------------------------------ Driver ------------------------------
     public static void main(String[] args){
         Scanner userInput = new Scanner(System.in);
         boolean quit = false;
         char command;
         boolean time = false;
 
-        System.out.println("Welcome to Maze on Fire");
+        System.out.println("Welcome to the Maze of Fire");
         try {
             int maze[][] = null;
             System.out.println("Please enter 'o' for maze of obstacles, 'f' for maze of fire, 'd' for DFS analysis graph, 'b' for BFS vs A* analysis graph, 's' for Strategy Analysis");
@@ -138,7 +139,6 @@ public class MazeDriver {
                         int result[][] = manager.strategy2(maze, q);
                         manager.printMaze(result);
                     }else if(command == '3'){
-                        System.out.println("Strategy 3 is being tested...");
                         int [][] result = manager.strategy3(maze, q);
                         manager.printMaze(result);
                     }else if(command == 'n') {
@@ -152,8 +152,8 @@ public class MazeDriver {
             }else if(command == 'd'){
                 generateDFSAnalysis();
             }else if(command == 's'){
-                 generateStrategiesAnalysis();
-                }
+                generateStrategiesAnalysis();
+            }
             else{
                 generateAStarVsBFSAnalysis();
             }
@@ -165,10 +165,11 @@ public class MazeDriver {
         userInput.close();
     }
 
+//------------------------------ Algorithm Analysis Tests (generates graph upon completion) ------------------------------
     //Generates DFS analysis test
     //Each test performs 10 DFS searches for each 'obstacle density p' and records the 'probability S can be reached from G'
     //There are a total of 10 tests for which the average of the 10 results are taken
-    //mazeDFS function is performed a total of 100 times for each 'obstacle density p' in order to get an accurate plot
+    //mazeDFS() is performed a total of 100 times for each 'obstacle density p' in order to get a good average
     public static void generateDFSAnalysis(){
         int dim = 50;
         Point start = new Point(null, 49, 49);
@@ -212,7 +213,10 @@ public class MazeDriver {
         generator.setVisible(true);
     }
 
-    //Still testing...
+    //Generates A* vs BFS analysis test
+    //Each test performs 10 BFS and A* searches for each 'obstacle density p' and records the 'number of nodes explored by BFS - number of nodes explored by A*'
+    //There are a total of 10 tests for which the average of the 10 results are taken
+    //mazeBFS() and mazeAStar() are performed a total of 100 times each for 'obstacle density p' in order to get a good average
     public static void generateAStarVsBFSAnalysis(){
         int dim = 10;
         double[] average = new double[10];
@@ -229,7 +233,7 @@ public class MazeDriver {
                 }
                 System.out.println("Average 'number of nodes explored by BFS - number of nodes explored by A*': " + (results/10)
                         + ", when obstacle density p is: " + formatDouble(p));
-                average[t] += results;
+                average[t] += (results/10);
                 t++;
             }
             System.out.println();
@@ -240,8 +244,8 @@ public class MazeDriver {
         //Outputs average results for each test
         for(int i=0; i < average.length; i++) {
             System.out.println("Average difference between BFS nodes explored - A* nodes explored for 0." + (i+1) + " is: "
-                    + formatDouble(average[i]/10));
-            dfsDataset.addValue(formatDouble(average[i] / 10), "difference", "0." + (i + 1));
+                    + average[i]/10);
+            dfsDataset.addValue(average[i] / 10, "difference", "0." + (i + 1));
         }
         GraphGenerator generator = new GraphGenerator("Average Points Explored Difference",
                 "BFS vs A*",
@@ -252,9 +256,12 @@ public class MazeDriver {
         RefineryUtilities.centerFrameOnScreen(generator);
         generator.setVisible(true);
     }
-    
+
+    //Generate strategy comparison analysis as described in project description
+    //This comparison generates 10 different mazes each with different random starting points for fire
+    //Each strategy is put to the test against each of the 10 mazes, starting with 'flammability rate' of 0.1 all the way to 0.9
     public static void generateStrategiesAnalysis(){
-        int dim = 50;
+        int dim = 30;
         ArrayList<int[][]> mazes = new ArrayList<>();
         for(int i=0;i<10;i++){
             mazes.add(manager.generateMazeOfFire(dim,0.3));
@@ -267,9 +274,9 @@ public class MazeDriver {
         for(double q=0.1;q<0.91;q+=0.1){
             for(int i=0;i<10;i++){
                 int[][] maze = mazes.get(i);
-                if(manager.strategy1(maze,q)[49][49] == 7) results1[qIndex] +=0.1;
-                if(manager.strategy2(maze,q)[49][49] == 7) results2[qIndex] +=0.1;
-                if(manager.strategy3(maze,q)[49][49] == 7) results3[qIndex] +=0.1;
+                if(manager.strategy1(maze,q)[29][29] == 7) results1[qIndex] +=0.1;
+                if(manager.strategy2(maze,q)[29][29] == 7) results2[qIndex] +=0.1;
+                if(manager.strategy3(maze,q)[29][29] == 7) results3[qIndex] +=0.1;
             }
             System.out.println("Average Successes for strategy 1: " + formatDouble(results1[qIndex])
                     + ", when Flammability q is: " + formatDouble(q));
@@ -299,11 +306,12 @@ public class MazeDriver {
 
     }
 
+//------------------------------ Utility Methods ------------------------------
+    //Helper method that formats doubles
     private static Double formatDouble(double num){
         String pattern = "0.00";
         DecimalFormat decimalFormat = new DecimalFormat(pattern);
-        String numberStr = decimalFormat.format(num);
-        return Double.parseDouble(numberStr);
+        return Double.parseDouble(decimalFormat.format(num));
     }
 
 }
