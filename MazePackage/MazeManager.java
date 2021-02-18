@@ -285,6 +285,69 @@ public class MazeManager {
         System.out.println("Congrats you made it out the fire");
         return pathResult(newPath, mazeCopy, curr);
     }
+    
+//     private ArrayList<Point> scanPath(int[][] maze, int currIndex, ArrayList<Point> path, ArrayList<Point> firePoints, double q){
+//    int[][] tempMaze = copyMaze(maze);
+//    ArrayList<Point> newPath = null;
+//
+//    for(int i=currIndex + 1; i < path.size(); i++){
+//        Point curr = path.get(i);
+//        if(maze[curr.x][curr.y] == 2){
+//            ArrayList<Point> tempPath = mazeAStar(tempMaze, path.get(currIndex), path.get(path.size() - 1));
+//            if(tempPath != null)
+//                newPath = tempPath;
+//            else
+//                return null;    //return nothing as no other path avoids fire, save computation
+//        }
+//    }
+//
+//    ArrayList<Point>[] minimalPath = new ArrayList[(path.size()-1) - currIndex];
+//    double[] probabilityOfFire = new double[(path.size()-1) - currIndex];
+//
+//    for(int i=0; i < firePoints.size(); i++){
+//        for(int j=currIndex + 1; j < path.size(); j++){
+//            int arrayIndex = j - currIndex - 1;
+//            Point fire = firePoints.get(i);
+//            Point curr = path.get(j);
+//            int stepsToPoint = j - currIndex;
+//            ArrayList<Point> firePath = modifiedMazeBFS(maze, fire, curr, stepsToPoint);
+//            if(firePath == null) continue;
+//            int fireToPoint = firePath.size() - 1;
+//            if(fireToPoint < minimalPath[arrayIndex].size()-1){
+//                minimalPath[arrayIndex] = firePath;
+//                probabilityOfFire[arrayIndex] = calculateProbability(maze, curr, firePath, q);
+//            }
+//        }
+//    }
+//    double threshold = (q <= 0.3) ? q + 0.025 : (q <= 0.6) ? q : q - 0.025; //Threshold changer
+//    for(int i=0; i < minimalPath.length; i++){
+//        int stepsToPoint = i + 1;
+//        if(probabilityOfFire[i] > threshold && minimalPath[i].size() - 1 < 4 && stepsToPoint >= minimalPath[i].size()-1){
+//            for(int j=1; j < minimalPath[i].size(); j++){
+//                tempMaze[minimalPath[i].get(j).x][minimalPath[i].get(j).y] = 2;
+//            }
+//            ArrayList<Point> tempPath = mazeAStar(tempMaze, path.get(currIndex), path.get(path.size()-1));
+//            if(tempPath != null){
+//                newPath = tempPath;
+//            }else{
+//                for(int j=1; j < minimalPath[i].size(); j++){
+//                    tempMaze[minimalPath[i].get(j).x][minimalPath[i].get(j).y] = 0;
+//                }
+//            }
+//        }
+//    }
+//    return newPath;
+//}
+//    private double calculateProbability(int[][] maze, Point pathPoint, ArrayList<Point> firePath, double q){
+//        double fireProbability = 1;
+//        for(int i=1; i < firePath.size(); i++){
+//            Point firePoint = firePath.get(i);
+//            int k = neighborsOnFire(firePoint.x, firePoint.y, maze);
+//            double prob = 1 - Math.pow((1 - q), k);
+//            fireProbability *= prob;
+//        }
+//        return fireProbability;
+//    }
 
     //Prints maze passed to function
     public void printMaze(int[][] maze){
