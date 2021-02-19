@@ -275,7 +275,7 @@ public class MazeManager {
                 return pathResult(newPath, mazeCopy, curr);
             }
             ArrayList<Point> firePoints = findFirePoints(mazeCopy);
-            ArrayList<Point> tempPath = scanPath(mazeCopy, i, path, firePoints);
+            ArrayList<Point> tempPath = scanPath(mazeCopy, i, path, firePoints, q);
             //new optimal path found avoiding risks
             if(tempPath != null){
                 path = tempPath;
@@ -285,69 +285,6 @@ public class MazeManager {
         System.out.println("Congrats you made it out the fire");
         return pathResult(newPath, mazeCopy, curr);
     }
-    
-//     private ArrayList<Point> scanPath(int[][] maze, int currIndex, ArrayList<Point> path, ArrayList<Point> firePoints, double q){
-//    int[][] tempMaze = copyMaze(maze);
-//    ArrayList<Point> newPath = null;
-//
-//    for(int i=currIndex + 1; i < path.size(); i++){
-//        Point curr = path.get(i);
-//        if(maze[curr.x][curr.y] == 2){
-//            ArrayList<Point> tempPath = mazeAStar(tempMaze, path.get(currIndex), path.get(path.size() - 1));
-//            if(tempPath != null)
-//                newPath = tempPath;
-//            else
-//                return null;    //return nothing as no other path avoids fire, save computation
-//        }
-//    }
-//
-//    ArrayList<Point>[] minimalPath = new ArrayList[(path.size()-1) - currIndex];
-//    double[] probabilityOfFire = new double[(path.size()-1) - currIndex];
-//
-//    for(int i=0; i < firePoints.size(); i++){
-//        for(int j=currIndex + 1; j < path.size(); j++){
-//            int arrayIndex = j - currIndex - 1;
-//            Point fire = firePoints.get(i);
-//            Point curr = path.get(j);
-//            int stepsToPoint = j - currIndex;
-//            ArrayList<Point> firePath = modifiedMazeBFS(maze, fire, curr, stepsToPoint);
-//            if(firePath == null) continue;
-//            int fireToPoint = firePath.size() - 1;
-//            if(fireToPoint < minimalPath[arrayIndex].size()-1){
-//                minimalPath[arrayIndex] = firePath;
-//                probabilityOfFire[arrayIndex] = calculateProbability(maze, curr, firePath, q);
-//            }
-//        }
-//    }
-//    double threshold = (q <= 0.3) ? q + 0.025 : (q <= 0.6) ? q : q - 0.025; //Threshold changer
-//    for(int i=0; i < minimalPath.length; i++){
-//        int stepsToPoint = i + 1;
-//        if(probabilityOfFire[i] > threshold && minimalPath[i].size() - 1 < 4 && stepsToPoint >= minimalPath[i].size()-1){
-//            for(int j=1; j < minimalPath[i].size(); j++){
-//                tempMaze[minimalPath[i].get(j).x][minimalPath[i].get(j).y] = 2;
-//            }
-//            ArrayList<Point> tempPath = mazeAStar(tempMaze, path.get(currIndex), path.get(path.size()-1));
-//            if(tempPath != null){
-//                newPath = tempPath;
-//            }else{
-//                for(int j=1; j < minimalPath[i].size(); j++){
-//                    tempMaze[minimalPath[i].get(j).x][minimalPath[i].get(j).y] = 0;
-//                }
-//            }
-//        }
-//    }
-//    return newPath;
-//}
-//    private double calculateProbability(int[][] maze, Point pathPoint, ArrayList<Point> firePath, double q){
-//        double fireProbability = 1;
-//        for(int i=1; i < firePath.size(); i++){
-//            Point firePoint = firePath.get(i);
-//            int k = neighborsOnFire(firePoint.x, firePoint.y, maze);
-//            double prob = 1 - Math.pow((1 - q), k);
-//            fireProbability *= prob;
-//        }
-//        return fireProbability;
-//    }
 
     //Prints maze passed to function
     public void printMaze(int[][] maze){
@@ -386,15 +323,13 @@ public class MazeManager {
 
 //------------------------------ Utility Methods ------------------------------
     //strategy3() helper method that scans current path to see if any point in path is currently on fire, if so a newPath is attempted using A* algorithm
-    //It then scans path once more, this time counting cells between each fire point and path point as an estimation of steps in between
-    //If the count is below the threshold of 4 then it retrieves the accurate amount of steps using modifiedMazeBFS()
-    //If the steps from the agents current position is greater than the steps it would take for the fire to reach the path point
-    //the algorithm considers new path by simulating the path fire could take and using A* algorithm attempting to avoid it
-    //If path is found that avoids fire, it will set it as the new path, otherwise it will retain previous path
-    private ArrayList<Point> scanPath(int[][] maze, int currIndex, ArrayList<Point> path, ArrayList<Point> firePoints){
+    //It then scans fire points in respect to path points and determines the minimal path from a fire point to a path point and its probability of flammability
+    //Once determining the minimal path and its probability, it then checks if a path takes less than 4 steps, the probability is below a certain threshold
+    //and if the agent will pass the point before it is at risk. It will update and return an optimal path if found, null otherwise.
+    private ArrayList<Point> scanPath(int[][] maze, int currIndex, ArrayList<Point> path, ArrayList<Point> firePoints, double q){
         int[][] tempMaze = copyMaze(maze);
         ArrayList<Point> newPath = null;
-        //Traverses path points in order to see if any points are currently blocked as new path must prioritize avoiding these occurrences first
+        //Step 1: traverse path to see if any path points are currently on fire. Avoid if possible, return null immediately if nothing can be done
         for(int i=currIndex + 1; i < path.size(); i++){
             Point curr = path.get(i);
             if(maze[curr.x][curr.y] == 2){
@@ -405,36 +340,56 @@ public class MazeManager {
                     return null;    //return nothing as no other path avoids fire, save computation
             }
         }
+        //Step 2: Traverse fire points in respect to path points and fill minimalPath and probabilityOfFire arrays with
+        ArrayList<Point>[] minimalPath = new ArrayList[(path.size()-1) - currIndex];
+        double[] probabilityOfFire = new double[(path.size()-1) - currIndex];
 
-        //Traverses fire and path points again to see if risky points can be avoided
         for(int i=0; i < firePoints.size(); i++){
             for(int j=currIndex + 1; j < path.size(); j++){
-                Point curr = path.get(j);
+                int arrayIndex = j - currIndex - 1;
                 Point fire = firePoints.get(i);
-                int fireToPoint = ((curr.x <= fire.x) ? fire.x - curr.x : curr.x - fire.x) +
-                        ((curr.y <= fire.y) ? fire.y - curr.y : curr.y - fire.y);
-                if(fireToPoint < 4) {
-                    int stepsToPoint = j - currIndex;
-                    if (stepsToPoint >= fireToPoint) { //Consider a new path if steps to pass point is more than the estimate of the fire to cover point
-                        ArrayList<Point> firePath = modifiedMazeBFS(tempMaze, fire, curr, stepsToPoint);    //Retrieves accurate steps from fire to point in path
-                        if(firePath != null){   //If accurate steps from fire to point is less than the steps to pass risky point
-                            for(Point p : firePath){    //Simulate the fire path in order to see if its avoidable
-                                tempMaze[p.x][p.y] = 2;
-                            }
-                            ArrayList<Point> tempPath = mazeAStar(tempMaze, path.get(currIndex), path.get(path.size() - 1)); //Try to find a new path that avoids the simulated fire path
-                            if(tempPath != null) {  //If one exists remember newPath
-                                newPath = tempPath;
-                            } else {    //Otherwise reset tempMaze and the risk will have to be taken
-                                for (Point p : firePath) {
-                                    tempMaze[p.x][p.y] = 0;
-                                }
-                            }
-                        }
+                Point curr = path.get(j);
+                int stepsToPoint = j - currIndex;
+                ArrayList<Point> firePath = modifiedMazeBFS(maze, fire, curr, stepsToPoint);
+                if(firePath == null) continue;
+                int fireToPoint = firePath.size() - 1;
+                if(minimalPath[arrayIndex].isEmpty() || fireToPoint < minimalPath[arrayIndex].size()-1){
+                    minimalPath[arrayIndex] = firePath;
+                    probabilityOfFire[arrayIndex] = calculateProbability(maze, firePath, q);
+                }
+            }
+        }
+        //Step 3: traverses minimalPath and probabilityOfFire and if the three conditions are met, then the point is at risk and a new path will be attempted to avoid it
+        double threshold = (q <= 0.3) ? q + 0.025 : (q <= 0.6) ? q : q - 0.025; //Threshold changer
+        for(int i=0; i < minimalPath.length; i++){
+            int stepsToPoint = i + 1;
+            if(probabilityOfFire[i] > threshold && minimalPath[i].size() - 1 < 4 && stepsToPoint >= minimalPath[i].size()-1){
+                for(int j=1; j < minimalPath[i].size(); j++){
+                    tempMaze[minimalPath[i].get(j).x][minimalPath[i].get(j).y] = 2;
+                }
+                ArrayList<Point> tempPath = mazeAStar(tempMaze, path.get(currIndex), path.get(path.size()-1));
+                if(tempPath != null){
+                    newPath = tempPath;
+                }else{
+                    for(int j=1; j < minimalPath[i].size(); j++){
+                        tempMaze[minimalPath[i].get(j).x][minimalPath[i].get(j).y] = 0;
                     }
                 }
             }
         }
         return newPath;
+    }
+
+    //strategy3()->scanPath() helper method that determines the probability of path point being set on fire
+    private double calculateProbability(int[][] maze, ArrayList<Point> firePath, double q){
+        double fireProbability = 1;
+        for(int i=1; i < firePath.size(); i++){
+            Point firePoint = firePath.get(i);
+            int k = neighborsOnFire(firePoint.x, firePoint.y, maze);
+            double prob = 1 - Math.pow((1 - q), k);
+            fireProbability *= prob;
+        }
+        return fireProbability;
     }
 
     //strategy3()->scanPath() helper method that attempts to get the accurate amount of steps between path point and fire point
@@ -465,7 +420,7 @@ public class MazeManager {
         return null;
     }
 
-    //strategy3()->scanPath() helper method that generates a list of points in maze that are on fire
+    //strategy3() helper method that generates a list of points in maze that are on fire
     private ArrayList<Point> findFirePoints(int[][] maze){
         ArrayList<Point> firePoints = new ArrayList<>();
         for(int i=0;i<maze.length;i++) {
